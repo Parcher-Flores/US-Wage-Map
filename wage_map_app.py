@@ -20,7 +20,7 @@ import plotly.express as px
 # ─────────────────────────────────────────────
 # CONFIGURATION
 # ─────────────────────────────────────────────
-BLS_API_KEY   = "c05f0df10adc4b28b243705a2815a90b"
+BLS_API_KEY   = os.environ.get("BLS_API_KEY", "") # Insert your API Key here
 BLS_URL       = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 FBC_FILE      = "fbc_data_2026.xlsx"
 GEOJSON_URL   = (
