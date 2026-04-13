@@ -16,11 +16,13 @@ import requests
 import pandas as pd
 from dash import Dash, dcc, html, Input, Output, State, callback_context
 import plotly.express as px
+
 import os
+
 # ─────────────────────────────────────────────
 # CONFIGURATION
 # ─────────────────────────────────────────────
-BLS_API_KEY   = os.environ.get("BLS_API_KEY", "") # Insert your API Key here
+BLS_API_KEY   = os.environ.get("BLS_API_KEY", "")  # set this in Render environment variables
 BLS_URL       = "https://api.bls.gov/publicAPI/v2/timeseries/data/"
 FBC_FILE      = "fbc_data_2026.xlsx"
 GEOJSON_URL   = (
@@ -105,19 +107,14 @@ def load_fbc_data(path: str = FBC_FILE) -> pd.DataFrame:
 
 def build_oes_series_id(occ_code: str) -> str:
     """
-    Build a BLS OES national series ID for median annual wage.
-    Pattern: OE + U + 000000 + 0 + {occ_no_dash} + 3
-    e.g. All Occupations (00-0000) → OEUM000000000000003  (national, all areas, annual median)
-    BLS OES series structure:
-        OE  = prefix
-        U   = cross-industry
-        M   = national (or state area code)
-        000000 = industry (000000 = all)
-        {occ_no_dash} = 6-char occupation
-        3   = datatype 3 = median annual wage
+    BLS OES series ID — 22 chars exactly:
+    OE(2) + U(1) + M(1) + area(5) + industry(6) + occupation(6) + datatype(1)
+    National all-industry: area=00000, industry=000000
+    e.g. All Occupations  → OEUM000000000000000003
+    e.g. Teachers 25-2021 → OEUM000000000002520213
     """
-    occ_stripped = occ_code.replace("-", "")  # e.g. "000000"
-    return f"OEUM000000000000{occ_stripped[:6]}3"
+    occ_stripped = occ_code.replace("-", "").ljust(6, "0")[:6]
+    return f"OEUM00000000000{occ_stripped}3"
 
 
 def fetch_national_median(occ_code: str) -> float | None:
@@ -134,10 +131,11 @@ def fetch_national_median(occ_code: str) -> float | None:
             BLS_URL,
             data=json.dumps(payload),
             headers={"Content-type": "application/json"},
-            timeout=15,
+            timeout=25,
         )
         data = resp.json()
         if data.get("status") != "REQUEST_SUCCEEDED":
+            print(f"  BLS national API error: {data.get('message', data.get('status'))}")
             return None
         series_list = data.get("Results", {}).get("series", [])
         if not series_list:
@@ -145,21 +143,21 @@ def fetch_national_median(occ_code: str) -> float | None:
         periods = series_list[0].get("data", [])
         if not periods:
             return None
-        # BLS returns "annual" period as "M13" or "A01"
         annual = [p for p in periods if p.get("period") in ("M13", "A01")]
         if annual:
             return float(annual[0]["value"])
-        # Fall back to latest period
         return float(periods[0]["value"])
-    except Exception:
+    except Exception as e:
+        print(f"  BLS national fetch exception: {e}")
         return None
 
 
 def fetch_state_medians(occ_code: str) -> dict[str, float]:
     """
     Fetch state-level median annual wages for an occupation.
-    BLS OES State series: OES + ST + {st_fips:02d} + 0000000 + {occ}3
-    We batch all 50 states + DC in one request (51 series IDs).
+    BLS OES state series — 22 chars:
+    OE(2)+U(1)+S(1)+stfips(2)+000(3)+000000(6)+occ(6)+3(1)
+    e.g. Colorado all occ → OEUS080000000000000003
     """
     STATE_FIPS = [
         "01","02","04","05","06","08","09","10","11","12","13","15","16","17","18",
@@ -167,9 +165,8 @@ def fetch_state_medians(occ_code: str) -> dict[str, float]:
         "34","35","36","37","38","39","40","41","42","44","45","46","47","48","49",
         "50","51","53","54","55","56",
     ]
-    occ_stripped = occ_code.replace("-", "")
-    # OES state series: OEUS{st_fips}0000000{occ}3
-    series_ids = [f"OEUS{st}0000000{occ_stripped}3" for st in STATE_FIPS]
+    occ_stripped = occ_code.replace("-", "").ljust(6, "0")[:6]
+    series_ids = [f"OEUS{st}00000000{occ_stripped}3" for st in STATE_FIPS]
 
     payload = {
         "seriesid": series_ids,
@@ -183,14 +180,14 @@ def fetch_state_medians(occ_code: str) -> dict[str, float]:
             BLS_URL,
             data=json.dumps(payload),
             headers={"Content-type": "application/json"},
-            timeout=20,
+            timeout=30,
         )
         data = resp.json()
         if data.get("status") != "REQUEST_SUCCEEDED":
+            print(f"  BLS state API error: {data.get('message', data.get('status'))}")
             return result
         for series in data.get("Results", {}).get("series", []):
             sid = series["seriesID"]
-            # Extract state FIPS from position 4-5
             st_fips = sid[4:6]
             periods = series.get("data", [])
             annual = [p for p in periods if p.get("period") in ("M13", "A01")]
@@ -198,8 +195,9 @@ def fetch_state_medians(occ_code: str) -> dict[str, float]:
                 result[st_fips] = float(annual[0]["value"])
             elif periods:
                 result[st_fips] = float(periods[0]["value"])
-    except Exception:
-        pass
+        print(f"  BLS state data: {len(result)} states returned")
+    except Exception as e:
+        print(f"  BLS state fetch exception: {e}")
     return result
 
 
@@ -209,14 +207,15 @@ _salary_cache: dict[str, dict] = {}
 
 def get_salaries(occ_code: str) -> dict:
     """
-    Returns {"national": float, "state": {fips: float}}.
-    Uses cache; falls back to national if state data unavailable.
+    Returns {"national": float | None, "state": {fips: float}}.
+    Uses cache; fetches live from BLS API on first request per occupation.
     """
     if occ_code in _salary_cache:
         return _salary_cache[occ_code]
-
+    print(f"  Fetching BLS data for occupation: {occ_code}")
     national = fetch_national_median(occ_code)
     state    = fetch_state_medians(occ_code)
+    print(f"  BLS result — national: {national}, states: {len(state)}")
     out = {"national": national, "state": state}
     _salary_cache[occ_code] = out
     return out
@@ -233,7 +232,7 @@ print(f"  {len(FBC_DF):,} rows loaded across {FBC_DF['county_fips'].nunique():,}
 # APP & HELPERS
 # ─────────────────────────────────────────────
 app = Dash(__name__, title="Wage vs. Cost of Living Map 2026", assets_folder="assets")
-server = app.server # required for Render/gunicorn deployment
+server = app.server  # required for Render/gunicorn deployment
 
 def deduction_row(row_label, input_id, placeholder, ded_type, tooltip=""):
     """Like override_row but with a PRE/POST badge and tooltip on hover."""
@@ -671,13 +670,13 @@ def reset_overrides(_):
     return [None] * 20
 
 
-# ── Fetch BLS salary ─────────────────────────
+# ── Salary lookup (instant, from CSV) ───────
 @app.callback(
     Output("salary-store", "data"),
     Input("occ-dropdown", "value"),
     prevent_initial_call=False,
 )
-def fetch_and_cache_salary(occ_code):
+def load_salary_for_occupation(occ_code):
     return get_salaries(occ_code)
 
 
