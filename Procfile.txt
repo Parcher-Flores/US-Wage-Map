@@ -1,1 +1,2 @@
-web: gunicorn wage_map_app:server --bind 0.0.0.0:$PORT
+web: gunicorn wage_map_app:server --bind 0.0.0.0:$PORT --timeout 120 --workers 1
+
