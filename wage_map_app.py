@@ -233,6 +233,7 @@ print(f"  {len(FBC_DF):,} rows loaded across {FBC_DF['county_fips'].nunique():,}
 # APP & HELPERS
 # ─────────────────────────────────────────────
 app = Dash(__name__, title="Wage vs. Cost of Living Map 2026", assets_folder="assets")
+server = app.server # required for Render/gunicorn deployment
 
 def deduction_row(row_label, input_id, placeholder, ded_type, tooltip=""):
     """Like override_row but with a PRE/POST badge and tooltip on hover."""
