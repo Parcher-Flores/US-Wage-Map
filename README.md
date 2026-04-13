@@ -8,8 +8,8 @@ Built with Plotly Dash, powered by real government and economic data.
 ---
 
 ## 🌐 Live Demo
-[**View the App →**](https://your-app-name.onrender.com)
-*(replace this link once deployed on Render)*
+[**View the App →**](https://us-wage-map.onrender.com)
+
 
 
 ## 🔍 What It Does
