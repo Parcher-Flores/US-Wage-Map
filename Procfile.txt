@@ -1,1 +1,1 @@
-web: gunicorn wage_map_app:server
+web: gunicorn wage_map_app:server --bind 0.0.0.0:$PORT
