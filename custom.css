@@ -1,0 +1,153 @@
+/* ════════════════════════════════════════════
+   DROPDOWNS  —  dark control, auto-contrast menu
+   ════════════════════════════════════════════ */
+
+/* Control box (the closed pill) */
+.bold-dropdown .Select-control {
+    background-color: #ffffff !important;
+    border: 2px solid #5a90c8 !important;
+    border-radius: 6px !important;
+    min-height: 40px !important;
+    box-shadow: 0 0 6px rgba(90,144,200,0.3) !important;
+    transition: border-color 0.15s, box-shadow 0.15s !important;
+}
+.bold-dropdown .Select-control:hover {
+    border-color: #7eb8f7 !important;
+    box-shadow: 0 0 12px rgba(126,184,247,0.45) !important;
+}
+
+/* Selected value — bold BLACK on the light control box */
+.bold-dropdown .Select-value-label,
+.bold-dropdown .Select-value,
+.bold-dropdown .Select--single > .Select-control .Select-value .Select-value-label,
+.bold-dropdown .VirtualizedSelectOption,
+.bold-dropdown .Select-control .Select-value-label {
+    color: #000000 !important;
+    font-size: 1rem !important;
+    font-weight: 800 !important;
+    letter-spacing: 0.01em !important;
+}
+
+/* Placeholder — black */
+.bold-dropdown .Select-placeholder,
+.bold-dropdown .Select-control .Select-placeholder {
+    color: #000000 !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+}
+
+/* Dropdown arrow */
+.bold-dropdown .Select-arrow-zone { padding-right: 10px !important; }
+.bold-dropdown .Select-arrow {
+    border-top-color: #7eb8f7 !important;
+    border-width: 6px 5px 0 !important;
+}
+.bold-dropdown.is-open .Select-arrow { border-bottom-color: #7eb8f7 !important; }
+
+/* Search input inside control */
+.bold-dropdown .Select-input input {
+    color: #000000 !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+}
+
+/* ── Dropdown menu (opens below, WHITE background) ── */
+.bold-dropdown .Select-menu-outer {
+    background-color: #ffffff !important;
+    border: 2px solid #5a90c8 !important;
+    border-top: none !important;
+    border-radius: 0 0 6px 6px !important;
+    z-index: 9999 !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.45) !important;
+}
+/* Options on white background → pure black text */
+.bold-dropdown .Select-option {
+    background-color: #ffffff !important;
+    color: #000000 !important;
+    font-size: 0.9rem !important;
+    font-weight: 700 !important;
+    padding: 9px 14px !important;
+}
+.bold-dropdown .Select-option:hover,
+.bold-dropdown .Select-option.is-focused {
+    background-color: #e8f0fe !important;
+    color: #000000 !important;
+}
+.bold-dropdown .Select-option.is-selected {
+    background-color: #1a4a8f !important;
+    color: #ffffff !important;
+    font-weight: 800 !important;
+}
+.bold-dropdown .Select-option.is-disabled {
+    color: #9ca3af !important;
+}
+
+/* ════════════════════════════════════════════
+   SECTION LABELS  (OCCUPATION, FAMILY TYPE…)
+   ════════════════════════════════════════════ */
+.ctrl-label {
+    font-size: 0.78rem !important;
+    color: #ffffff !important;
+    font-weight: 900 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.12em !important;
+    margin-bottom: 6px !important;
+    text-shadow: 0 1px 4px rgba(0,0,0,0.8) !important;
+}
+
+/* ════════════════════════════════════════════
+   RADIO BUTTONS  (Salary Data Source)
+   ════════════════════════════════════════════ */
+/* Force all radio label text to be bold white */
+input[type="radio"] + label,
+.dash-radio-items label,
+.radio-group label {
+    color: #ffffff !important;
+    font-weight: 800 !important;
+    font-size: 0.92rem !important;
+}
+
+/* ════════════════════════════════════════════
+   OVERRIDE PANEL
+   ════════════════════════════════════════════ */
+.override-panel {
+    background: #141929;
+    border: 1px solid #2a3349;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0 32px 0 32px;
+}
+.override-panel-header {
+    padding: 10px 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: #1a2035;
+    border-bottom: 1px solid #2a3349;
+    user-select: none;
+}
+.override-panel-header:hover { background: #1e2840; }
+
+/* ════════════════════════════════════════════
+   NUMBER INPUTS
+   ════════════════════════════════════════════ */
+.override-input {
+    background: #0f1117 !important;
+    border: 1.5px solid #3a5070 !important;
+    border-radius: 5px !important;
+    color: #ffffff !important;
+    font-size: 0.95rem !important;
+    font-weight: 700 !important;
+    padding: 6px 10px !important;
+    width: 140px !important;
+    outline: none !important;
+}
+.override-input:focus {
+    border-color: #7eb8f7 !important;
+    box-shadow: 0 0 6px rgba(126,184,247,0.3) !important;
+}
+.override-input::placeholder {
+    color: #7890a8 !important;
+    font-weight: 500 !important;
+}
